@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Панель управления</title>
+    <title>HP — Личный состав</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS -->
@@ -22,18 +22,21 @@
     <!-- Экран авторизации -->
     <div id="auth-screen" class="flex items-center justify-center min-h-screen p-4">
         <div class="glass-panel p-8 rounded-2xl border border-slate-800 shadow-2xl w-full max-w-md">
-            <h2 class="text-2xl font-bold text-white text-center mb-6">Авторизация</h2>
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-white">HP PORTAL</h2>
+                <p class="text-xs text-slate-400 mt-1">Панель управления отделом HR</p>
+            </div>
             <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">Логин</label>
-                    <input type="text" id="login-user" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500">
+                    <input type="text" id="login-user" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 text-sm">
                 </div>
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">Пароль</label>
-                    <input type="password" id="login-pass" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500">
+                    <input type="password" id="login-pass" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 text-sm">
                 </div>
                 <div id="login-error" class="text-red-400 text-xs hidden"></div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-lg transition">Войти</button>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-lg transition text-sm">Войти</button>
             </form>
         </div>
     </div>
@@ -45,7 +48,7 @@
         <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-20">
             <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <span class="text-xl font-black text-blue-500">PORTAL</span>
+                    <span class="text-xl font-black text-blue-500">HP PORTAL</span>
                     <span id="user-badge" class="text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700"></span>
                 </div>
                 <button onclick="handleLogout()" class="text-xs text-slate-400 hover:text-red-400 transition">Выйти</button>
@@ -70,25 +73,25 @@
             <div id="tab-employees" class="tab-content active space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-bold text-white">Личный состав</h3>
-                    <button onclick="openModal('add')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3.5 py-2 rounded-lg font-semibold transition">+ Добавить</button>
+                    <button onclick="openEmployeeModal('add')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3.5 py-2 rounded-lg font-semibold transition">+ Добавить сотрудника</button>
                 </div>
                 <div class="overflow-x-auto glass-panel rounded-xl border border-slate-800">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-900/80 text-slate-400 uppercase font-mono border-b border-slate-800">
                             <tr>
                                 <th class="p-3">№</th>
-                                <th class="p-3">ФИО</th>
-                                <th class="p-3">Static ID</th>
+                                <th class="p-3">Имя Фамилия</th>
+                                <th class="p-3">Статик (UID)</th>
                                 <th class="p-3">Должность</th>
-                                <th class="p-3">Звание</th>
+                                <th class="p-3">Ранг</th>
                                 <th class="p-3">Категория</th>
-                                <th class="p-3">Выговоры</th>
+                                <th class="p-3">Выговора</th>
                                 <th class="p-3">Предупреждения</th>
                                 <th class="p-3">Discord</th>
-                                <th class="p-3">IC Отпуск</th>
-                                <th class="p-3">OOC Отпуск</th>
+                                <th class="p-3">IC отпуск</th>
+                                <th class="p-3">OOC отпуск</th>
                                 <th class="p-3">Активность</th>
-                                <th class="p-3">Отчёт</th>
+                                <th class="p-3">Еженедельный отчёт</th>
                                 <th class="p-3">Баллы</th>
                                 <th class="p-3 text-right">Действия</th>
                             </tr>
@@ -100,19 +103,23 @@
 
             <!-- 2. Переаттестация -->
             <div id="tab-reexamination" class="tab-content space-y-4">
-                <h3 class="text-lg font-bold text-white">Переаттестация</h3>
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-white">Переаттестация</h3>
+                    <button onclick="openReexamModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3.5 py-2 rounded-lg font-semibold transition">+ Запись о переаттестации</button>
+                </div>
                 <div class="overflow-x-auto glass-panel rounded-xl border border-slate-800">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-900/80 text-slate-400 uppercase font-mono border-b border-slate-800">
                             <tr>
                                 <th class="p-3.5">№</th>
-                                <th class="p-3.5">Сотрудник</th>
-                                <th class="p-3.5">Static ID</th>
+                                <th class="p-3.5">Имя Фамилия</th>
+                                <th class="p-3.5">Статик</th>
                                 <th class="p-3.5">Должность</th>
-                                <th class="p-3.5">Дата экзамена</th>
+                                <th class="p-3.5">Дата</th>
                                 <th class="p-3.5">Результат</th>
                                 <th class="p-3.5">Баллы</th>
                                 <th class="p-3.5">Примечание</th>
+                                <th class="p-3.5 text-right">Действия</th>
                             </tr>
                         </thead>
                         <tbody id="reexam-tbody" class="divide-y divide-slate-800/60"></tbody>
@@ -123,7 +130,23 @@
             <!-- 3. Лучшие сотрудники -->
             <div id="tab-top" class="tab-content space-y-4">
                 <h3 class="text-lg font-bold text-white">Лучшие сотрудники</h3>
-                <div id="top-employees-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div class="overflow-x-auto glass-panel rounded-xl border border-slate-800">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase font-mono border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5"># Место</th>
+                                <th class="p-3.5">Имя Фамилия</th>
+                                <th class="p-3.5">Статик</th>
+                                <th class="p-3.5">Должность</th>
+                                <th class="p-3.5">Баллы</th>
+                                <th class="p-3.5">Выполнено задач</th>
+                                <th class="p-3.5">Активность</th>
+                                <th class="p-3.5">Итог</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-tbody" class="divide-y divide-slate-800/60"></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- 4. Еженедельная отчётность -->
@@ -134,13 +157,15 @@
                         <thead class="bg-slate-900/80 text-slate-400 uppercase font-mono border-b border-slate-800">
                             <tr>
                                 <th class="p-3.5">№</th>
-                                <th class="p-3.5">Сотрудник</th>
-                                <th class="p-3.5">Static ID</th>
+                                <th class="p-3.5">Имя Фамилия</th>
+                                <th class="p-3.5">Статик</th>
                                 <th class="p-3.5">Неделя</th>
                                 <th class="p-3.5">Баллы</th>
-                                <th class="p-3.5">Статус отчёта</th>
-                                <th class="p-3.5">Часы онлайн</th>
-                                <th class="p-3.5">Итого</th>
+                                <th class="p-3.5">Отчёт</th>
+                                <th class="p-3.5">IC отпуск</th>
+                                <th class="p-3.5">OOC отпуск</th>
+                                <th class="p-3.5">Онлайн</th>
+                                <th class="p-3.5">Итог</th>
                             </tr>
                         </thead>
                         <tbody id="weekly-tbody" class="divide-y divide-slate-800/60"></tbody>
@@ -151,26 +176,67 @@
             <!-- 5. Статистика -->
             <div id="tab-stats" class="tab-content space-y-4">
                 <h3 class="text-lg font-bold text-white">🔒 Статистика</h3>
-                <div id="stats-container"></div>
+                <div class="max-w-xl glass-panel rounded-xl border border-slate-800 overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase font-mono border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Показатель</th>
+                                <th class="p-3.5 text-right">Значение</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stats-tbody" class="divide-y divide-slate-800/60"></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- 6. Памятка -->
             <div id="tab-memo" class="tab-content space-y-4">
-                <h3 class="text-lg font-bold text-white">🔒 Памятка</h3>
-                <div id="memo-container" class="space-y-3"></div>
+                <h3 class="text-lg font-bold text-white">🔒 Памятка сотрудникам отдела HR</h3>
+                <div class="glass-panel rounded-xl border border-slate-800 p-6 space-y-6 text-sm text-slate-300">
+                    <div>
+                        <h4 class="text-white font-bold mb-3 border-b border-slate-800 pb-2">Основные правила</h4>
+                        <ol class="list-decimal list-inside space-y-2 text-slate-300">
+                            <li>Каждый сотрудник обязан состоять в официальном Discord фракции.</li>
+                            <li>Каждый сотрудник обязан соблюдать установленный недельный норматив и сдавать отчётность в срок.</li>
+                            <li>При невозможности работать сотрудник заранее оформляет IC-отпуск (игровой) или OOC-отпуск (неигровой) согласно внутреннему порядку.</li>
+                            <li>Отсутствие без причины и без оформленного отпуска фиксируется как нарушение.</li>
+                            <li>Руководящий состав вправе проверять активность, отчётность и соблюдение внутренних требований.</li>
+                            <li>За нарушения применяются меры дисциплинарного воздействия согласно внутреннему уставу.</li>
+                            <li>Выговоры и предупреждения в реестр заносит руководитель после проверки обстоятельств.</li>
+                            <li>По итогам недели может определяться лучший сотрудник отдела и предоставляться поощрение.</li>
+                        </ol>
+                    </div>
+
+                    <div>
+                        <h4 class="text-white font-bold mb-3 border-b border-slate-800 pb-2">Структура отдела</h4>
+                        <ul class="space-y-1 font-mono text-xs text-slate-400">
+                            <li><span class="text-blue-400 font-bold">13 ранг</span> — Куратор отдела (старший состав)</li>
+                            <li><span class="text-blue-400 font-bold">12 ранг</span> — Начальник отдела (старший состав)</li>
+                            <li><span class="text-blue-400 font-bold">11 ранг</span> — Заместитель начальника отдела (старший состав)</li>
+                            <li><span class="text-blue-400 font-bold">10 ранг</span> — Инструктор отдела (средний состав)</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="text-white font-bold mb-3 border-b border-slate-800 pb-2">Автоматическая связь таблиц</h4>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            <strong class="text-slate-200">Личный состав</strong> — главный реестр. Имя, статик и должность автоматически привязываются к листам «Переаттестация» и «Еженедельная отчётность».
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <!-- 7. Штатные лимиты -->
             <div id="tab-limits" class="tab-content space-y-4">
                 <h3 class="text-lg font-bold text-white">🔒 Штатные лимиты</h3>
-                <div class="overflow-x-auto glass-panel rounded-xl border border-slate-800">
+                <div class="max-w-2xl glass-panel rounded-xl border border-slate-800 overflow-hidden">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-900/80 text-slate-400 uppercase font-mono border-b border-slate-800">
                             <tr>
-                                <th class="p-3.5">Должность / Звание</th>
-                                <th class="p-3.5">Лимит</th>
-                                <th class="p-3.5">Занято</th>
-                                <th class="p-3.5">Свободно</th>
+                                <th class="p-3.5">Ранг / должность</th>
+                                <th class="p-3.5 text-center">Максимум должностей</th>
+                                <th class="p-3.5 text-center">Занято по текущему списку</th>
+                                <th class="p-3.5 text-center">Свободно</th>
                             </tr>
                         </thead>
                         <tbody id="limits-tbody" class="divide-y divide-slate-800/60"></tbody>
@@ -181,7 +247,7 @@
         </main>
     </div>
 
-    <!-- Подключение всех JS модулей -->
+    <!-- Подключение JS модулей -->
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/employees.js"></script>
