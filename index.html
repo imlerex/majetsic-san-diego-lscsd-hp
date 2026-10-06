@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кадровый учет - LSCSD</title>
+    <!-- Подключаем Tailwind CSS для красивого интерфейса -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключаем Supabase JS клиент -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: ui-sans-serif, system-ui, sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ЭКРАН АВТОРИЗАЦИИ -->
+    <div id="auth-screen" class="flex items-center justify-center flex-grow p-4">
+        <div class="bg-slate-800 border border-slate-700 p-8 rounded-xl shadow-2xl w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-6 text-center text-blue-400">Авторизация в системе</h2>
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Логин</label>
+                    <input type="text" id="login-user" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Пароль</label>
+                    <input type="password" id="login-pass" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div id="login-error" class="text-red-400 text-sm hidden"></div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded transition">Войти</button>
+            </form>
+            <p class="text-xs text-slate-500 text-center mt-4">Стартовый логин: <b class="text-slate-400">admin</b> | Пароль: <b class="text-slate-400">admin123</b></p>
+        </div>
+    </div>
+
+    <!-- ОСНОВНОЙ ИНТЕРФЕЙС САЙТА (СКРЫТ ДО ВХОДА) -->
+    <div id="app-screen" class="hidden flex-grow flex flex-col">
+        <!-- Шапка -->
+        <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-xl font-bold text-blue-400">Кадровый учет НР</h1>
+                <span id="user-badge" class="bg-slate-800 text-slate-300 text-xs px-2.5 py-1 rounded-full border border-slate-700"></span>
+            </div>
+            <button onclick="handleLogout()" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/30 px-3 py-1.5 rounded text-sm transition">Выйти</button>
+        </header>
+
+        <!-- Навигация по вкладкам -->
+        <nav class="bg-slate-900/50 border-b border-slate-800 px-6 flex space-x-2 overflow-x-auto">
+            <button onclick="switchTab('employees')" class="tab-btn py-3 px-4 text-sm font-medium border-b-2 border-blue-500 text-blue-400 whitespace-nowrap">Личный состав</button>
+            <button onclick="switchTab('reexamination')" class="tab-btn py-3 px-4 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap">Переаттестация</button>
+            <button onclick="switchTab('weekly')" class="tab-btn py-3 px-4 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap">Еженедельные отчёты</button>
+            <button onclick="switchTab('limits')" class="tab-btn py-3 px-4 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap">Штатные лимиты</button>
+            <button id="admin-tab-btn" onclick="switchTab('admin')" class="tab-btn py-3 px-4 text-sm font-medium border-b-2 border-transparent text-purple-400 hover:text-purple-300 whitespace-nowrap hidden">Панель Администратора</button>
+        </nav>
+
+        <!-- Контент вкладок -->
+        <main class="p-6 flex-grow max-w-7xl w-full mx-auto">
+            
+            <!-- 1. Личный состав -->
+            <div id="tab-employees" class="tab-content active">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">База сотрудников</h2>
+                    <button onclick="loadEmployees()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3 py-1.5 rounded">Обновить</button>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-800/50 text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">№</th>
+                                <th class="p-3">Имя Фамилия</th>
+                                <th class="p-3">Статик (UID)</th>
+                                <th class="p-3">Должность</th>
+                                <th class="p-3">Ранг</th>
+                                <th class="p-3">Категория</th>
+                                <th class="p-3">Выговоры</th>
+                                <th class="p-3">Баллы</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employees-tbody" class="divide-y divide-slate-800">
+                            <tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка данных...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. Переаттестация -->
+            <div id="tab-reexamination" class="tab-content">
+                <h2 class="text-lg font-semibold mb-4">Журнал переаттестаций</h2>
+                <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-800/50 text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">№</th>
+                                <th class="p-3">Имя Фамилия</th>
+                                <th class="p-3">Статик</th>
+                                <th class="p-3">Должность</th>
+                                <th class="p-3">Дата</th>
+                                <th class="p-3">Результат</th>
+                                <th class="p-3">Баллы</th>
+                                <th class="p-3">Примечание</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reexam-tbody" class="divide-y divide-slate-800">
+                            <tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка данных...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. Еженедельные отчёты -->
+            <div id="tab-weekly" class="tab-content">
+                <h2 class="text-lg font-semibold mb-4">Еженедельная отчётность</h2>
+                <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-800/50 text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">№</th>
+                                <th class="p-3">Имя Фамилия</th>
+                                <th class="p-3">Статик</th>
+                                <th class="p-3">Неделя</th>
+                                <th class="p-3">Баллы</th>
+                                <th class="p-3">Статус отчёта</th>
+                                <th class="p-3">Онлайн</th>
+                                <th class="p-3">Итог</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weekly-tbody" class="divide-y divide-slate-800">
+                            <tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка данных...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. Штатные лимиты -->
+            <div id="tab-limits" class="tab-content">
+                <h2 class="text-lg font-semibold mb-4">Штатные лимиты должностей</h2>
+                <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-800/50 text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Должность / Ранг</th>
+                                <th class="p-3">Максимум слотов</th>
+                                <th class="p-3">Занято</th>
+                                <th class="p-3">Свободно</th>
+                            </tr>
+                        </thead>
+                        <tbody id="limits-tbody" class="divide-y divide-slate-800">
+                            <tr><td colspan="4" class="p-4 text-center text-slate-500">Загрузка данных...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 5. Панель Администратора -->
+            <div id="tab-admin" class="tab-content">
+                <h2 class="text-lg font-semibold mb-4 text-purple-400">Управление учетными записями</h2>
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-lg max-w-xl">
+                    <h3 class="text-md font-medium mb-3">Создать нового пользователя</h3>
+                    <form onsubmit="handleCreateUser(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Логин</label>
+                            <input type="text" id="new-user" required class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Пароль</label>
+                            <input type="password" id="new-pass" required class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Роль</label>
+                            <select id="new-role" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white">
+                                <option value="editor">Обычный сотрудник (Просмотр)</option>
+                                <option value="admin">Администратор (Полный доступ)</option>
+                            </select>
+                        </div>
+                        <div id="admin-msg" class="text-sm text-green-400 hidden"></div>
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-medium px-4 py-2 rounded transition">Создать аккаунт</button>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- СКРИПТ ПОДКЛЮЧЕНИЯ К SUPABASE -->
+    <script>
+        // ЗАМЕНИ НА СВОИ ДАННЫЕ ИЗ НАСТРОЕК SUPABASE (Settings -> API)
+        const SUPABASE_URL = 'https://cagrftmurazuyerbnrr.supabase.co'; // <--- Твой Project URL
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZ3J0ZnRtdXJhenV5ZXJibnJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyODcxMzcsImV4cCI6MjEwNjg2MzEzN30.YY4nuE4PXJTcwwFhQaBZc1gTdPh14yn-FqY9l_xloP0'; // <--- Твой anon key
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentUser = null;
+
+        // Функция хеширования пароля (SHA-256)
+        async function hashPassword(password) {
+            const msgBuffer = new TextEncoder().encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Авторизация
+        async function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('login-user').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const errDiv = document.getElementById('login-error');
+            errDiv.classList.add('hidden');
+
+            const passHash = await hashPassword(pass);
+
+            const { data, error } = await supabaseClient
+                .from('app_users')
+                .select('*')
+                .eq('username', user)
+                .eq('password_hash', passHash)
+                .single();
+
+            if (error || !data) {
+                errDiv.textContent = 'Неверный логин или пароль!';
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            currentUser = data;
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            
+            document.getElementById('user-badge').textContent = `${currentUser.username} (${currentUser.role === 'admin' ? 'Администратор' : 'Сотрудник'})`;
+
+            if (currentUser.role === 'admin') {
+                document.getElementById('admin-tab-btn').classList.remove('hidden');
+            }
+
+            // Загружаем данные первой вкладки
+            loadEmployees();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('login-form').reset();
+        }
+
+        // Переключение вкладок
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-400', 'border-purple-500', 'text-purple-400');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            event.target.classList.remove('border-transparent', 'text-slate-400');
+            if(tabName === 'admin') {
+                event.target.classList.add('border-purple-500', 'text-purple-400');
+            } else {
+                event.target.classList.add('border-blue-500', 'text-blue-400');
+            }
+
+            // Загрузка данных по клику на вкладку
+            if (tabName === 'employees') loadEmployees();
+            if (tabName === 'reexamination') loadReexam();
+            if (tabName === 'weekly') loadWeekly();
+            if (tabName === 'limits') loadLimits();
+        }
+
+        // Загрузка данных из таблиц Supabase
+        async function loadEmployees() {
+            const tbody = document.getElementById('employees-tbody');
+            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка...</td></tr>';
+            
+            const { data, error } = await supabaseClient.from('employees').select('*').order('row_num', { ascending: true });
+            if (error || !data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Нет записей в базе данных</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(row => `
+                <tr class="hover:bg-slate-800/40">
+                    <td class="p-3">${row.row_num || ''}</td>
+                    <td class="p-3 font-medium text-white">${row.full_name || ''}</td>
+                    <td class="p-3 text-slate-400">${row.static_uid || ''}</td>
+                    <td class="p-3">${row.position || ''}</td>
+                    <td class="p-3">${row.rank || ''}</td>
+                    <td class="p-3">${row.category || ''}</td>
+                    <td class="p-3 text-red-400">${row.warnings || 0}</td>
+                    <td class="p-3 text-green-400">${row.points || 0}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadReexam() {
+            const tbody = document.getElementById('reexam-tbody');
+            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка...</td></tr>';
+            
+            const { data } = await supabaseClient.from('reexamination').select('*');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Нет записей</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(row => `
+                <tr class="hover:bg-slate-800/40">
+                    <td class="p-3">${row.row_num || ''}</td>
+                    <td class="p-3 font-medium text-white">${row.full_name || ''}</td>
+                    <td class="p-3 text-slate-400">${row.static_uid || ''}</td>
+                    <td class="p-3">${row.position || ''}</td>
+                    <td class="p-3">${row.exam_date || ''}</td>
+                    <td class="p-3">${row.result || ''}</td>
+                    <td class="p-3">${row.points || ''}</td>
+                    <td class="p-3 text-slate-400">${row.note || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadWeekly() {
+            const tbody = document.getElementById('weekly-tbody');
+            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка...</td></tr>';
+            
+            const { data } = await supabaseClient.from('weekly_reports').select('*');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Нет записей</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(row => `
+                <tr class="hover:bg-slate-800/40">
+                    <td class="p-3">${row.row_num || ''}</td>
+                    <td class="p-3 font-medium text-white">${row.full_name || ''}</td>
+                    <td class="p-3 text-slate-400">${row.static_uid || ''}</td>
+                    <td class="p-3">${row.week_num || ''}</td>
+                    <td class="p-3 text-green-400">${row.points || ''}</td>
+                    <td class="p-3">${row.report_status || ''}</td>
+                    <td class="p-3">${row.online_status || ''}</td>
+                    <td class="p-3 font-bold">${row.total || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+            async function loadLimits() {
+            const tbody = document.getElementById('limits-tbody');
+            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Загрузка...</td></tr>';
+            
+            const { data } = await supabaseClient.from('staff_limits').select('*');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Нет записей</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(row => `
+                <tr class="hover:bg-slate-800/40">
+                    <td class="p-3 font-medium text-white">${row.rank_position || ''}</td>
+                    <td class="p-3">${row.max_slots || ''}</td>
+                    <td class="p-3 text-blue-400">${row.current_filled || ''}</td>
+                    <td class="p-3 text-green-400">${row.free_slots || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Создание пользователя администратором
+        async function handleCreateUser(e) {
+            e.preventDefault();
+            const user = document.getElementById('new-user').value.trim();
+            const pass = document.getElementById('new-pass').value;
+            const role = document.getElementById('new-role').value;
+            const msgDiv = document.getElementById('admin-msg');
+
+            const passHash = await hashPassword(pass);
+
+            const { error } = await supabaseClient.from('app_users').insert([
+                { username: user, password_hash: passHash, role: role }
+            ]);
+
+            if (error) {
+                alert('Ошибка создания: возможно, такой логин уже существует.');
+                return;
+            }
+
+            msgDiv.textContent = `Успешно создан аккаунт "${user}"!`;
+            msgDiv.classList.remove('hidden');
+            document.getElementById('new-user').value = '';
+            document.getElementById('new-pass').value = '';
+            setTimeout(() => msgDiv.classList.add('hidden'), 4000);
+        }
+    </script>
+</body>
+</html>
