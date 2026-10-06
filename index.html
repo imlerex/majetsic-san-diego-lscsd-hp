@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Кадровый учет - LSCSD</title>
-    <!-- Подключаем Tailwind CSS для красивого интерфейса -->
+    <!-- Подключаем Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Подключаем Supabase JS клиент -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -36,7 +36,7 @@
         </div>
     </div>
 
-    <!-- ОСНОВНОЙ ИНТЕРФЕЙС САЙТА (СКРЫТ ДО ВХОДА) -->
+    <!-- ОСНОВНОЙ ИНТЕРФЕЙС САЙТА -->
     <div id="app-screen" class="hidden flex-grow flex flex-col">
         <!-- Шапка -->
         <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
@@ -59,11 +59,11 @@
         <!-- Контент вкладок -->
         <main class="p-6 flex-grow max-w-7xl w-full mx-auto">
             
-            <!-- 1. Личный состав -->
+            <!-- 1. Личный состав (подтягивается из Google Таблицы) -->
             <div id="tab-employees" class="tab-content active">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold">База сотрудников</h2>
-                    <button onclick="loadEmployees()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3 py-1.5 rounded">Обновить</button>
+                    <button onclick="loadEmployees()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3 py-1.5 rounded text-slate-300">Обновить</button>
                 </div>
                 <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-x-auto">
                     <table class="w-full text-left text-sm">
@@ -156,9 +156,9 @@
 
             <!-- 5. Панель Администратора -->
             <div id="tab-admin" class="tab-content">
-                <h2 class="text-lg font-semibold mb-4 text-purple-400">Управление личным составом и доступом</h2>
+                <h2 class="text-lg font-semibold mb-4 text-purple-400">Управление личным составом</h2>
                 <div class="bg-slate-900 border border-slate-800 p-6 rounded-lg max-w-xl">
-                    <h3 class="text-md font-medium mb-3">Добавить сотрудника в Google Таблицу</h3>
+                    <h3 class="text-md font-medium mb-3">Добавить нового сотрудника в таблицу</h3>
                     <form onsubmit="handleCreateUser(event)" class="space-y-4">
                         <div>
                             <label class="block text-sm text-slate-400 mb-1">Имя Фамилия</label>
@@ -201,7 +201,9 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let currentUser = null;
 
-        // Функция хеширования пароля (SHA-256)
+        // Ссылка на твой Google Web App скрипт
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxYSO5D_VrrpDPY5AsEG-xNif7jeekD6wzWJHaI6ZqRs6ynJqp-Xb1yMmwNTpj49Zr7/exec';
+
         async function hashPassword(password) {
             const msgBuffer = new TextEncoder().encode(password);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -209,7 +211,6 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // Авторизация
         async function handleLogin(e) {
             e.preventDefault();
             const user = document.getElementById('login-user').value.trim();
@@ -237,14 +238,16 @@
             document.getElementById('app-screen').classList.remove('hidden');
             
             let roleName = 'Сотрудник';
-            if (currentUser.role === 'admin') roleName = 'Администратор';
-            if (currentUser.role === 'head') roleName = 'Head';
-            if (currentUser.role === 'ass') roleName = 'Ass.';
-            if (currentUser.role === 'dep_head') roleName = 'Dep Head';
+            const role = (currentUser.role || '').toLowerCase().trim();
+
+            if (role === 'admin') roleName = 'Администратор';
+            else if (role === 'head') roleName = 'Head';
+            else if (role === 'ass') roleName = 'Ass.';
+            else if (role === 'dep_head') roleName = 'Dep Head';
 
             document.getElementById('user-badge').textContent = `${currentUser.username} (${roleName})`;
 
-            if (['admin', 'head', 'ass'].includes(currentUser.role)) {
+            if (['admin', 'head', 'ass', 'dep_head'].includes(role) || currentUser.is_admin) {
                 document.getElementById('admin-tab-btn').classList.remove('hidden');
             } else {
                 document.getElementById('admin-tab-btn').classList.add('hidden');
@@ -260,7 +263,6 @@
             document.getElementById('login-form').reset();
         }
 
-        // Переключение вкладок
         function switchTab(tabName, event) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -268,7 +270,8 @@
                 btn.classList.add('border-transparent', 'text-slate-400');
             });
 
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+            const targetContent = document.getElementById(`tab-${tabName}`);
+            if (targetContent) targetContent.classList.add('active');
             
             const targetBtn = event ? event.currentTarget : document.querySelector(`[onclick*="switchTab('${tabName}')"]`);
             if (targetBtn) {
@@ -286,35 +289,41 @@
             if (tabName === 'limits') loadLimits();
         }
 
-        // Загрузка данных из таблиц Supabase (или можно оставить просмотр)
+        // Загрузка сотрудников напрямую из Google Таблицы через скрипт
         async function loadEmployees() {
             const tbody = document.getElementById('employees-tbody');
-            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка из таблицы...</td></tr>';
             
-            const { data, error } = await supabaseClient.from('employees').select('*').order('row_num', { ascending: true });
-            if (error || !data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Нет записей в базе данных</td></tr>';
-                return;
-            }
+            try {
+                const response = await fetch(scriptURL);
+                const data = await response.json();
 
-            tbody.innerHTML = data.map(row => `
-                <tr class="hover:bg-slate-800/40">
-                    <td class="p-3">${row.row_num || ''}</td>
-                    <td class="p-3 font-medium text-white">${row.full_name || ''}</td>
-                    <td class="p-3 text-slate-400">${row.static_uid || ''}</td>
-                    <td class="p-3">${row.position || ''}</td>
-                    <td class="p-3">${row.rank || ''}</td>
-                    <td class="p-3">${row.category || ''}</td>
-                    <td class="p-3 text-red-400">${row.warnings || 0}</td>
-                    <td class="p-3 text-green-400">${row.points || 0}</td>
-                </tr>
-            `).join('');
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Таблица пуста</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(row => `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-3">${row.row_num || ''}</td>
+                        <td class="p-3 font-medium text-white">${row.full_name || ''}</td>
+                        <td class="p-3 text-slate-400">${row.static_uid || ''}</td>
+                        <td class="p-3">${row.position || ''}</td>
+                        <td class="p-3">${row.rank || ''}</td>
+                        <td class="p-3">${row.category || ''}</td>
+                        <td class="p-3 text-red-400">${row.warnings || 0}</td>
+                        <td class="p-3 text-green-400">${row.points || 0}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-400">Ошибка загрузки данных из таблицы</td></tr>';
+            }
         }
 
         async function loadReexam() {
             const tbody = document.getElementById('reexam-tbody');
             tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка...</td></tr>';
-            
             const { data } = await supabaseClient.from('reexamination').select('*');
             if (!data || data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Нет записей</td></tr>';
@@ -337,7 +346,6 @@
         async function loadWeekly() {
             const tbody = document.getElementById('weekly-tbody');
             tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка...</td></tr>';
-            
             const { data } = await supabaseClient.from('weekly_reports').select('*');
             if (!data || data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Нет записей</td></tr>';
@@ -360,7 +368,6 @@
         async function loadLimits() {
             const tbody = document.getElementById('limits-tbody');
             tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Загрузка...</td></tr>';
-            
             const { data } = await supabaseClient.from('staff_limits').select('*');
             if (!data || data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Нет записей</td></tr>';
@@ -376,11 +383,10 @@
             `).join('');
         }
 
-        // Отправка данных сотрудника напрямую в Google Таблицу через Apps Script
         async function handleCreateUser(e) {
             e.preventDefault();
 
-            if (!['admin', 'head', 'ass'].includes(currentUser.role)) {
+            if (!['admin', 'head', 'ass', 'dep_head'].includes((currentUser.role || '').toLowerCase().trim())) {
                 alert('У вас нет прав на добавление записей!');
                 return;
             }
@@ -393,23 +399,19 @@
                 category: document.getElementById('emp-category').value
             };
 
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbxYSO5D_VrrpDPY5AsEG-xNif7jeekD6wzWJHaI6ZqRs6ynJqp-Xb1yMmwNTpj49Zr7/exec';
             const msgDiv = document.getElementById('admin-msg');
 
             try {
                 await fetch(scriptURL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(employeeData)
                 });
 
                 msgDiv.textContent = `Сотрудник "${employeeData.fullName}" успешно добавлен в таблицу!`;
                 msgDiv.classList.remove('hidden');
                 
-                // Очищаем форму
                 document.getElementById('emp-name').value = '';
                 document.getElementById('emp-uid').value = '';
                 document.getElementById('emp-position').value = '';
