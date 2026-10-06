@@ -156,28 +156,36 @@
 
             <!-- 5. Панель Администратора -->
             <div id="tab-admin" class="tab-content">
-                <h2 class="text-lg font-semibold mb-4 text-purple-400">Управление учетными записями</h2>
+                <h2 class="text-lg font-semibold mb-4 text-purple-400">Управление личным составом и доступом</h2>
                 <div class="bg-slate-900 border border-slate-800 p-6 rounded-lg max-w-xl">
-                    <h3 class="text-md font-medium mb-3">Создать нового пользователя</h3>
+                    <h3 class="text-md font-medium mb-3">Добавить сотрудника в Google Таблицу</h3>
                     <form onsubmit="handleCreateUser(event)" class="space-y-4">
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">Логин</label>
-                            <input type="text" id="new-user" required class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white">
+                            <label class="block text-sm text-slate-400 mb-1">Имя Фамилия</label>
+                            <input type="text" id="emp-name" required class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" placeholder="Remy Outlaw">
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">Пароль</label>
-                            <input type="password" id="new-pass" required class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white">
+                            <label class="block text-sm text-slate-400 mb-1">Статик (UID)</label>
+                            <input type="text" id="emp-uid" required class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" placeholder="229989">
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-400 mb-1">Роль</label>
-                            <select id="new-role" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white">
-                                <option value="dep_head">Dep Head (Руководитель отдела)</option>
-                                <option value="head">Head (Главный)</option>
-                                <option value="ass">Ass. (Заместитель)</option>
+                            <label class="block text-sm text-slate-400 mb-1">Должность</label>
+                            <input type="text" id="emp-position" required class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" placeholder="Куратор отдела">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Ранг</label>
+                            <input type="number" id="emp-rank" required class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white" placeholder="13">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Категория</label>
+                            <select id="emp-category" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-white">
+                                <option value="Старший состав">Старший состав</option>
+                                <option value="Средний состав">Средний состав</option>
+                                <option value="Младший состав">Младший состав</option>
                             </select>
                         </div>
                         <div id="admin-msg" class="text-sm text-green-400 hidden"></div>
-                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-medium px-4 py-2 rounded transition">Создать аккаунт</button>
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-medium px-4 py-2 rounded transition w-full">Добавить в таблицу</button>
                     </form>
                 </div>
             </div>
@@ -185,7 +193,7 @@
         </main>
     </div>
 
-    <!-- СКРИПТ ПОДКЛЮЧЕНИЯ К SUPABASE -->
+    <!-- СКРИПТЫ ЛОГИКИ -->
     <script>
         const SUPABASE_URL = 'https://cagrtftmurazuyerbnrr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZ3J0ZnRtdXJhenV5ZXJibnJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyODcxMzcsImV4cCI6MjEwNjg2MzEzN30.YY4nuE4PXJTcwwFhQaBZc1gTdPh14yn-FqY9l_xloP0';
@@ -228,7 +236,6 @@
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('app-screen').classList.remove('hidden');
             
-            // Красивое отображение роли в бейдже
             let roleName = 'Сотрудник';
             if (currentUser.role === 'admin') roleName = 'Администратор';
             if (currentUser.role === 'head') roleName = 'Head';
@@ -237,14 +244,12 @@
 
             document.getElementById('user-badge').textContent = `${currentUser.username} (${roleName})`;
 
-            // Доступ к панели администратора есть у admin, head, ass
             if (['admin', 'head', 'ass'].includes(currentUser.role)) {
                 document.getElementById('admin-tab-btn').classList.remove('hidden');
             } else {
                 document.getElementById('admin-tab-btn').classList.add('hidden');
             }
 
-            // Загружаем данные первой вкладки
             loadEmployees();
         }
 
@@ -265,7 +270,6 @@
 
             document.getElementById(`tab-${tabName}`).classList.add('active');
             
-            // Безопасное использование currentTarget вместо target
             const targetBtn = event ? event.currentTarget : document.querySelector(`[onclick*="switchTab('${tabName}')"]`);
             if (targetBtn) {
                 targetBtn.classList.remove('border-transparent', 'text-slate-400');
@@ -276,14 +280,13 @@
                 }
             }
 
-            // Загрузка данных по клику на вкладку
             if (tabName === 'employees') loadEmployees();
             if (tabName === 'reexamination') loadReexam();
             if (tabName === 'weekly') loadWeekly();
             if (tabName === 'limits') loadLimits();
         }
 
-        // Загрузка данных из таблиц Supabase
+        // Загрузка данных из таблиц Supabase (или можно оставить просмотр)
         async function loadEmployees() {
             const tbody = document.getElementById('employees-tbody');
             tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Загрузка...</td></tr>';
@@ -373,36 +376,50 @@
             `).join('');
         }
 
-        // Создание пользователя с проверкой прав (Head, Ass, Admin)
+        // Отправка данных сотрудника напрямую в Google Таблицу через Apps Script
         async function handleCreateUser(e) {
             e.preventDefault();
 
             if (!['admin', 'head', 'ass'].includes(currentUser.role)) {
-                alert('У вас нет прав на создание учетных записей!');
+                alert('У вас нет прав на добавление записей!');
                 return;
             }
 
-            const user = document.getElementById('new-user').value.trim();
-            const pass = document.getElementById('new-pass').value;
-            const role = document.getElementById('new-role').value;
+            const employeeData = {
+                fullName: document.getElementById('emp-name').value.trim(),
+                staticUid: document.getElementById('emp-uid').value.trim(),
+                position: document.getElementById('emp-position').value.trim(),
+                rank: document.getElementById('emp-rank').value.trim(),
+                category: document.getElementById('emp-category').value
+            };
+
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxYSO5D_VrrpDPY5AsEG-xNif7jeekD6wzWJHaI6ZqRs6ynJqp-Xb1yMmwNTpj49Zr7/exec';
             const msgDiv = document.getElementById('admin-msg');
 
-            const passHash = await hashPassword(pass);
+            try {
+                await fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(employeeData)
+                });
 
-            const { error } = await supabaseClient.from('app_users').insert([
-                { username: user, password_hash: passHash, role: role }
-            ]);
+                msgDiv.textContent = `Сотрудник "${employeeData.fullName}" успешно добавлен в таблицу!`;
+                msgDiv.classList.remove('hidden');
+                
+                // Очищаем форму
+                document.getElementById('emp-name').value = '';
+                document.getElementById('emp-uid').value = '';
+                document.getElementById('emp-position').value = '';
+                document.getElementById('emp-rank').value = '';
 
-            if (error) {
-                alert('Ошибка создания: возможно, такой логин уже существует.');
-                return;
+                setTimeout(() => msgDiv.classList.add('hidden'), 5000);
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Не удалось отправить данные в Google Таблицу.');
             }
-
-            msgDiv.textContent = `Успешно создан аккаунт "${user}"!`;
-            msgDiv.classList.remove('hidden');
-            document.getElementById('new-user').value = '';
-            document.getElementById('new-pass').value = '';
-            setTimeout(() => msgDiv.classList.add('hidden'), 4000);
         }
     </script>
 </body>
