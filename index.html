@@ -3,532 +3,549 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Управление личным составом</title>
+    <title>Кадровый учет - LSCSD</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Шрифты Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --card-hover: #334155;
-            --accent: #6366f1;
-            --accent-hover: #4f46e5;
-            --danger: #ef4444;
-            --danger-hover: #dc2626;
-            --success: #10b981;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
-            --radius: 12px;
+        body { 
+            background-color: #0b0f19; 
+            color: #f8fafc; 
+            font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; 
         }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            padding: 24px;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* Навигация */
-        nav {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-            background: var(--card-bg);
-            padding: 8px;
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-        }
-
-        .nav-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            padding: 10px 20px;
-            font-weight: 500;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .nav-btn.active, .nav-btn:hover {
-            background: var(--accent);
-            color: #fff;
-        }
-
-        /* Секции */
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Шапка блока */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .btn-add {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            color: #fff;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .btn-add:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
-        }
-
-        /* Таблица личного состава */
-        .table-card {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            overflow: hidden;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
-
-        th {
-            background: #111827;
-            padding: 14px 18px;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-        }
-
-        td {
-            padding: 14px 18px;
-            border-top: 1px solid var(--border);
-            font-size: 0.95rem;
-        }
-
-        tr:hover {
-            background-color: var(--card-hover);
-        }
-
-        .badge {
-            background: #312e81;
-            color: #a5b4fc;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        /* Кнопки действий */
-        .action-btns {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-icon {
-            background: var(--border);
-            border: none;
-            color: var(--text-main);
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-icon:hover {
-            background: var(--accent);
-        }
-
-        .btn-icon.delete:hover {
-            background: var(--danger);
+        /* Эффект стекла */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         /* Модальное окно */
         .modal-backdrop {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
             display: flex;
-            justify-content: center;
             align-items: center;
-            z-index: 1000;
+            justify-content: center;
+            z-index: 50;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s;
+            transition: opacity 0.2s ease;
         }
-
         .modal-backdrop.open {
             opacity: 1;
-            pointer-events: all;
-        }
-
-        .modal {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            width: 100%;
-            max-width: 450px;
-            padding: 24px;
-            border-radius: var(--radius);
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
-        }
-
-        .modal-header {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-        }
-
-        .form-group {
-            margin-bottom: 14px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 10px;
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            outline: none;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            border-color: var(--accent);
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        /* Запрет доступа */
-        .access-denied {
-            text-align: center;
-            padding: 60px 20px;
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            border: 1px solid var(--danger);
-        }
-
-        .access-denied h2 {
-            color: var(--danger);
-            margin-bottom: 10px;
+            pointer-events: auto;
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
 
-<div class="container">
-    <!-- Верхняя навигация -->
-    <nav>
-        <button class="nav-btn active" onclick="switchTab('personnel')">👥 Личный состав</button>
-        <button class="nav-btn" onclick="switchTab('admin')">⚙️ Панель Администратора</button>
-    </nav>
+    <!-- 1. ЭКРАН АВТОРИЗАЦИИ -->
+    <div id="auth-screen" class="flex items-center justify-center flex-grow p-4">
+        <div class="glass-panel p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700/50">
+            <div class="text-center mb-8">
+                <div class="inline-flex p-3 rounded-2xl bg-blue-500/10 text-blue-400 mb-3">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Авторизация</h2>
+                <p class="text-xs text-slate-400 mt-1">Вход в систему кадрового учета</p>
+            </div>
 
-    <!-- ВКЛАДКА 1: ЛИЧНЫЙ СОСТАВ -->
-    <div id="personnel-tab" class="tab-content active">
-        <div class="section-header">
-            <h1 class="section-title">Личный состав</h1>
-            <button id="add-btn" class="btn-add" onclick="openModal('create')" style="display: none;">
-                ➕ Добавить сотрудника
-            </button>
-        </div>
-
-        <div class="table-card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ФИО</th>
-                        <th>Static UID</th>
-                        <th>Должность</th>
-                        <th>Звание</th>
-                        <th>Категория</th>
-                        <th id="actions-header" style="display: none; text-align: right;">Действия</th>
-                    </tr>
-                </thead>
-                <tbody id="employee-list">
-                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Загрузка...</td></tr>
-                </tbody>
-            </table>
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Логин</label>
+                    <input type="text" id="login-user" required class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Пароль</label>
+                    <input type="password" id="login-pass" required class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition">
+                </div>
+                <div id="login-error" class="text-red-400 text-sm hidden bg-red-500/10 p-3 rounded-lg border border-red-500/20 text-center"></div>
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium py-2.5 rounded-xl transition shadow-lg shadow-blue-500/25">Войти</button>
+            </form>
+            <p class="text-xs text-slate-500 text-center mt-6">Стартовый логин: <b class="text-slate-400">admin</b> | Пароль: <b class="text-slate-400">admin123</b></p>
         </div>
     </div>
 
-    <!-- ВКЛАДКА 2: ПАНЕЛЬ АДМИНИСТРАТОРА -->
-    <div id="admin-tab" class="tab-content">
-        <div id="admin-authorized-content" style="display: none;">
-            <div class="section-header">
-                <h1 class="section-title">Панель Администратора</h1>
+    <!-- 2. ОСНОВНОЙ ИНТЕРФЕЙС САЙТА -->
+    <div id="app-screen" class="hidden flex-grow flex flex-col">
+        <!-- Шапка -->
+        <header class="glass-panel border-b border-slate-800 px-6 py-4 flex justify-between items-center sticky top-0 z-40">
+            <div class="flex items-center space-x-3">
+                <div class="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></div>
+                <h1 class="text-lg font-bold text-white tracking-wide">Кадровый учет</h1>
+                <span id="user-badge" class="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-full border border-slate-700/60 font-medium"></span>
             </div>
-            <div class="table-card" style="padding: 24px;">
-                <p>Добро пожаловать в админ-панель. Здесь вам доступны расширенные настройки и аналитика системы.</p>
+            <button onclick="handleLogout()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-3.5 py-1.5 rounded-lg text-sm transition">Выйти</button>
+        </header>
+
+        <!-- Навигация -->
+        <nav class="bg-slate-900/60 border-b border-slate-800/80 px-6 flex space-x-2 overflow-x-auto">
+            <button onclick="switchTab('employees', event)" class="tab-btn py-3.5 px-4 text-sm font-medium border-b-2 border-blue-500 text-blue-400 whitespace-nowrap transition">👥 Личный состав</button>
+            <button onclick="switchTab('reexamination', event)" class="tab-btn py-3.5 px-4 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition">📋 Переаттестация</button>
+            <button onclick="switchTab('weekly', event)" class="tab-btn py-3.5 px-4 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition">📅 Еженедельные отчёты</button>
+            <button onclick="switchTab('limits', event)" class="tab-btn py-3.5 px-4 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition">📊 Штатные лимиты</button>
+            <button id="admin-tab-btn" onclick="switchTab('admin', event)" class="tab-btn py-3.5 px-4 text-sm font-medium border-b-2 border-transparent text-purple-400 hover:text-purple-300 whitespace-nowrap transition">⚙️ Панель Администратора</button>
+        </nav>
+
+        <!-- Контент вкладок -->
+        <main class="p-6 flex-grow max-w-7xl w-full mx-auto space-y-6">
+            
+            <!-- Вкладка 1: Личный состав -->
+            <div id="tab-employees" class="tab-content active space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">База сотрудников</h2>
+                        <p class="text-xs text-slate-400">Данные синхронизируются с Google Таблицей</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="loadEmployees()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3.5 py-2 rounded-lg text-slate-300 transition">↻ Обновить</button>
+                        <button id="add-employee-btn" onclick="openModal('create')" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-lg shadow-blue-500/20 transition flex items-center gap-1.5">
+                            <span>➕</span> Добавить сотрудника
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-xl overflow-hidden border border-slate-800">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-900/90 text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="p-3.5">№</th>
+                                <th class="p-3.5">Имя Фамилия</th>
+                                <th class="p-3.5">Статик (UID)</th>
+                                <th class="p-3.5">Должность</th>
+                                <th class="p-3.5">Ранг</th>
+                                <th class="p-3.5">Категория</th>
+                                <th class="p-3.5">Выговоры</th>
+                                <th class="p-3.5">Баллы</th>
+                                <th class="p-3.5 text-right">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employees-tbody" class="divide-y divide-slate-800/60">
+                            <tr><td colspan="9" class="p-6 text-center text-slate-500">Загрузка данных...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
 
-        <div id="admin-forbidden-content" class="access-denied" style="display: none;">
-            <h2>🚫 Вход воспрещен</h2>
-            <p>Панель Администратора доступна только для пользователей с ролями <strong>Head</strong> и <strong>Ass</strong>.</p>
-        </div>
-    </div>
-</div>
-
-<!-- МОДАЛЬНОЕ ОКНО (ДОБАВЛЕНИЕ / РЕДАКТИРОВАНИЕ) -->
-<div class="modal-backdrop" id="modal-backdrop">
-    <div class="modal">
-        <div class="modal-header" id="modal-title">Добавить сотрудника</div>
-        <form id="employee-form" onsubmit="handleFormSubmit(event)">
-            <input type="hidden" id="form-row-index">
-            <div class="form-group">
-                <label>ФИО Сотрудника</label>
-                <input type="text" id="form-fullName" required>
+            <!-- Вкладка 2: Переаттестация -->
+            <div id="tab-reexamination" class="tab-content">
+                <h2 class="text-xl font-bold mb-4">Журнал переаттестаций</h2>
+                <div class="glass-panel rounded-xl overflow-hidden border border-slate-800">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-900/90 text-slate-400 border-b border-slate-800 text-xs uppercase">
+                            <tr>
+                                <th class="p-3.5">№</th>
+                                <th class="p-3.5">Имя Фамилия</th>
+                                <th class="p-3.5">Статик</th>
+                                <th class="p-3.5">Должность</th>
+                                <th class="p-3.5">Дата</th>
+                                <th class="p-3.5">Результат</th>
+                                <th class="p-3.5">Баллы</th>
+                                <th class="p-3.5">Примечание</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reexam-tbody" class="divide-y divide-slate-800/60">
+                            <tr><td colspan="8" class="p-6 text-center text-slate-500">Загрузка...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Static UID</label>
-                <input type="text" id="form-staticUid" required>
+
+            <!-- Вкладка 3: Еженедельные отчёты -->
+            <div id="tab-weekly" class="tab-content">
+                <h2 class="text-xl font-bold mb-4">Еженедельная отчётность</h2>
+                <div class="glass-panel rounded-xl overflow-hidden border border-slate-800">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-900/90 text-slate-400 border-b border-slate-800 text-xs uppercase">
+                            <tr>
+                                <th class="p-3.5">№</th>
+                                <th class="p-3.5">Имя Фамилия</th>
+                                <th class="p-3.5">Статик</th>
+                                <th class="p-3.5">Неделя</th>
+                                <th class="p-3.5">Баллы</th>
+                                <th class="p-3.5">Статус отчёта</th>
+                                <th class="p-3.5">Онлайн</th>
+                                <th class="p-3.5">Итог</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weekly-tbody" class="divide-y divide-slate-800/60">
+                            <tr><td colspan="8" class="p-6 text-center text-slate-500">Загрузка...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Должность</label>
-                <input type="text" id="form-position" required>
+
+            <!-- Вкладка 4: Штатные лимиты -->
+            <div id="tab-limits" class="tab-content">
+                <h2 class="text-xl font-bold mb-4">Штатные лимиты должностей</h2>
+                <div class="glass-panel rounded-xl overflow-hidden border border-slate-800">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-900/90 text-slate-400 border-b border-slate-800 text-xs uppercase">
+                            <tr>
+                                <th class="p-3.5">Должность / Ранг</th>
+                                <th class="p-3.5">Максимум слотов</th>
+                                <th class="p-3.5">Занято</th>
+                                <th class="p-3.5">Свободно</th>
+                            </tr>
+                        </thead>
+                        <tbody id="limits-tbody" class="divide-y divide-slate-800/60">
+                            <tr><td colspan="4" class="p-6 text-center text-slate-500">Загрузка...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Звание</label>
-                <input type="text" id="form-rank" required>
-            </div>
-            <div class="form-group">
-                <label>Категория</label>
-                <select id="form-category">
-                    <option value="Основной">Основной</option>
-                    <option value="Стажер">Стажер</option>
-                    <option value="Руководство">Руководство</option>
-                </select>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeModal()">Отмена</button>
-                <button type="submit" class="btn-add">Сохранить</button>
-            </div>
-        </form>
-    </div>
-</div>
 
-<script>
-    // 🌐 Вставьте сюда URL вашего развернутого Google Apps Script
-    const scriptURL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
-
-    // 👤 Текущий пользователь (пример)
-    const currentUser = {
-        name: 'Алексей',
-        role: 'Head' // Измените на 'User', 'Ass', 'Head' для проверки прав
-    };
-
-    let employeesData = [];
-
-    // Проверка прав управления
-    function canManage() {
-        const role = (currentUser.role || '').toLowerCase().trim();
-        return ['head', 'ass'].includes(role);
-    }
-
-    // Инициализация
-    window.addEventListener('DOMContentLoaded', () => {
-        if (canManage()) {
-            document.getElementById('add-btn').style.display = 'flex';
-            document.getElementById('actions-header').style.display = 'table-cell';
-        }
-        loadEmployees();
-    });
-
-    // Переключение вкладок
-    function switchTab(tab) {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-        if (tab === 'personnel') {
-            event.target.classList.add('active');
-            document.getElementById('personnel-tab').classList.add('active');
-        } else if (tab === 'admin') {
-            event.target.classList.add('active');
-            document.getElementById('admin-tab').classList.add('active');
-
-            if (canManage()) {
-                document.getElementById('admin-authorized-content').style.display = 'block';
-                document.getElementById('admin-forbidden-content').style.display = 'none';
-            } else {
-                document.getElementById('admin-authorized-content').style.display = 'none';
-                document.getElementById('admin-forbidden-content').style.display = 'block';
-            }
-        }
-    }
-
-    // Загрузка списка сотрудников
-    async function loadEmployees() {
-        try {
-            const res = await fetch(scriptURL);
-            employeesData = await res.json();
-            renderEmployees();
-        } catch (err) {
-            console.error('Ошибка загрузки:', err);
-        }
-    }
-
-    // Отображение в таблице
-    function renderEmployees() {
-        const tbody = document.getElementById('employee-list');
-        tbody.innerHTML = '';
-
-        if (!employeesData || employeesData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Записи отсутствуют</td></tr>';
-            return;
-        }
-
-        const isManager = canManage();
-
-        employeesData.forEach((emp) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td style="font-weight: 600;">${emp.fullName}</td>
-                <td style="font-family: monospace; color: var(--accent);">${emp.staticUid}</td>
-                <td>${emp.position}</td>
-                <td>${emp.rank}</td>
-                <td><span class="badge">${emp.category}</span></td>
-                ${isManager ? `
-                    <td style="text-align: right;">
-                        <div class="action-btns" style="justify-content: flex-end;">
-                            <button class="btn-icon" title="Редактировать" onclick="openModal('update', ${emp.rowIndex})">✏️</button>
-                            <button class="btn-icon delete" title="Удалить" onclick="deleteEmployee(${emp.rowIndex})">🗑️</button>
+            <!-- Вкладка 5: Панель Администратора (Доступна ТОЛЬКО Head и Ass) -->
+            <div id="tab-admin" class="tab-content">
+                <div id="admin-access-granted" class="hidden">
+                    <h2 class="text-xl font-bold text-purple-400 mb-4">Панель управления старшего состава</h2>
+                    <div class="glass-panel p-6 rounded-xl border border-purple-500/20 max-w-2xl">
+                        <h3 class="text-base font-semibold mb-2 text-white">Администрирование системы</h3>
+                        <p class="text-sm text-slate-400 mb-4">Этот раздел предназначен для глобальной настройки прав и управления системой.</p>
+                        <div class="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg text-xs text-purple-300">
+                            Статус сессии: Авторизован как Руководство (Head / Ass)
                         </div>
-                    </td>
-                ` : ''}
-            `;
-            tbody.appendChild(tr);
-        });
-    }
+                    </div>
+                </div>
 
-    // Открытие модального окна
-    function openModal(mode, rowIndex = null) {
-        const modal = document.getElementById('modal-backdrop');
-        const title = document.getElementById('modal-title');
-        
-        if (mode === 'create') {
-            title.textContent = '➕ Добавить сотрудника';
-            document.getElementById('form-row-index').value = '';
-            document.getElementById('employee-form').reset();
-        } else if (mode === 'update') {
-            title.textContent = '✏️ Редактировать сотрудника';
-            const emp = employeesData.find(e => e.rowIndex === rowIndex);
-            if (emp) {
-                document.getElementById('form-row-index').value = emp.rowIndex;
-                document.getElementById('form-fullName').value = emp.fullName;
-                document.getElementById('form-staticUid').value = emp.staticUid;
-                document.getElementById('form-position').value = emp.position;
-                document.getElementById('form-rank').value = emp.rank;
-                document.getElementById('form-category').value = emp.category;
+                <div id="admin-access-denied" class="hidden">
+                    <div class="glass-panel p-12 rounded-xl border border-red-500/30 text-center max-w-lg mx-auto my-8 space-y-3">
+                        <div class="text-4xl">🚫</div>
+                        <h2 class="text-xl font-bold text-red-400">Доступ запрещен</h2>
+                        <p class="text-sm text-slate-400">Раздел «Панель Администратора» доступен только пользователям с ролями <strong class="text-white">Head</strong> и <strong class="text-white">Ass</strong>.</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО (ДОБАВЛЕНИЕ / РЕДАКТИРОВАНИЕ В GOOGLE SHEET) -->
+    <div id="employee-modal" class="modal-backdrop">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl space-y-4">
+            <h3 id="modal-title" class="text-lg font-bold text-white">Добавить сотрудника</h3>
+            <form id="modal-form" onsubmit="handleSaveEmployee(event)" class="space-y-3">
+                <input type="hidden" id="modal-row-num">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Имя Фамилия</label>
+                    <input type="text" id="modal-name" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Статик (UID)</label>
+                    <input type="text" id="modal-uid" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Должность</label>
+                    <input type="text" id="modal-position" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Ранг</label>
+                        <input type="number" id="modal-rank" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Категория</label>
+                        <select id="modal-category" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                            <option value="Старший состав">Старший состав</option>
+                            <option value="Средний состав">Средний состав</option>
+                            <option value="Младший состав">Младший состав</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-lg transition">Отмена</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-lg shadow-blue-500/20 transition">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- СКРИПТЫ ЛОГИКИ -->
+    <script>
+        const SUPABASE_URL = 'https://cagrtftmurazuyerbnrr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNhZ3J0ZnRtdXJhenV5ZXJibnJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyODcxMzcsImV4cCI6MjEwNjg2MzEzN30.YY4nuE4PXJTcwwFhQaBZc1gTdPh14yn-FqY9l_xloP0';
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentUser = null;
+        let loadedEmployeesData = [];
+
+        // Ссылка на Google Apps Script
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxYSO5D_VrrpDPY5AsEG-xNif7jeekD6wzWJHaI6ZqRs6ynJqp-Xb1yMmwNTpj49Zr7/exec';
+
+        // Проверка для Панели Администратора: имеет ли пользователь роль Head или Ass
+        function isHeadOrAss() {
+            if (!currentUser) return false;
+            const role = (currentUser.role || '').toLowerCase().trim();
+            return role === 'head' || role === 'ass';
+        }
+
+        async function hashPassword(password) {
+            const msgBuffer = new TextEncoder().encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Авторизация
+        async function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('login-user').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const errDiv = document.getElementById('login-error');
+            errDiv.classList.add('hidden');
+
+            const passHash = await hashPassword(pass);
+
+            const { data, error } = await supabaseClient
+                .from('app_users')
+                .select('*')
+                .eq('username', user)
+                .eq('password_hash', passHash)
+                .single();
+
+            if (error || !data) {
+                errDiv.textContent = 'Неверный логин или пароль!';
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            currentUser = data;
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            
+            const roleName = currentUser.role || 'Сотрудник';
+            document.getElementById('user-badge').textContent = `${currentUser.username} (${roleName})`;
+
+            loadEmployees();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('login-form').reset();
+        }
+
+        // Переключение вкладок
+        function switchTab(tabName, event) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-400', 'border-purple-500', 'text-purple-400');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            const targetContent = document.getElementById(`tab-${tabName}`);
+            if (targetContent) targetContent.classList.add('active');
+            
+            const targetBtn = event ? event.currentTarget : document.querySelector(`[onclick*="switchTab('${tabName}')"]`);
+            if (targetBtn) {
+                targetBtn.classList.remove('border-transparent', 'text-slate-400');
+                if(tabName === 'admin') {
+                    targetBtn.classList.add('border-purple-500', 'text-purple-400');
+                } else {
+                    targetBtn.classList.add('border-blue-500', 'text-blue-400');
+                }
+            }
+
+            // Проверка доступа к Админ-панели (строго для Head и Ass)
+            if (tabName === 'admin') {
+                if (isHeadOrAss()) {
+                    document.getElementById('admin-access-granted').classList.remove('hidden');
+                    document.getElementById('admin-access-denied').classList.add('hidden');
+                } else {
+                    document.getElementById('admin-access-granted').classList.add('hidden');
+                    document.getElementById('admin-access-denied').classList.remove('hidden');
+                }
+            }
+
+            if (tabName === 'employees') loadEmployees();
+            if (tabName === 'reexamination') loadReexam();
+            if (tabName === 'weekly') loadWeekly();
+            if (tabName === 'limits') loadLimits();
+        }
+
+        // Загрузка сотрудников из Google Таблицы
+        async function loadEmployees() {
+            const tbody = document.getElementById('employees-tbody');
+            tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-500">Загрузка из таблицы...</td></tr>';
+            
+            try {
+                const response = await fetch(scriptURL);
+                loadedEmployeesData = await response.json();
+
+                if (!loadedEmployeesData || loadedEmployeesData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-500">Таблица пуста</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = loadedEmployeesData.map(row => `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-3.5 text-slate-400 font-mono text-xs">${row.row_num || ''}</td>
+                        <td class="p-3.5 font-semibold text-white">${row.full_name || ''}</td>
+                        <td class="p-3.5 text-blue-400 font-mono text-xs">${row.static_uid || ''}</td>
+                        <td class="p-3.5 text-slate-300">${row.position || ''}</td>
+                        <td class="p-3.5 text-slate-300">${row.rank || ''}</td>
+                        <td class="p-3.5"><span class="bg-slate-800 border border-slate-700/60 text-slate-300 text-xs px-2.5 py-1 rounded-md">${row.category || ''}</span></td>
+                        <td class="p-3.5 text-red-400 font-bold">${row.warnings || 0}</td>
+                        <td class="p-3.5 text-emerald-400 font-bold">${row.points || 0}</td>
+                        <td class="p-3.5 text-right">
+                            <button onclick="openModal('update', ${row.row_num})" class="text-slate-400 hover:text-blue-400 p-1 transition" title="Редактировать">✏️</button>
+                            <button onclick="handleDeleteEmployee(${row.row_num}, '${row.full_name}')" class="text-slate-400 hover:text-red-400 p-1 transition ml-1" title="Удалить">🗑️</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-red-400">Ошибка загрузки данных</td></tr>';
             }
         }
-        modal.classList.add('open');
-    }
 
-    function closeModal() {
-        document.getElementById('modal-backdrop').classList.remove('open');
-    }
+        // Модальное окно (Добавление / Редактирование)
+        function openModal(mode, rowNum = null) {
+            const modal = document.getElementById('employee-modal');
+            const title = document.getElementById('modal-title');
+            
+            if (mode === 'create') {
+                title.textContent = '➕ Добавить сотрудника';
+                document.getElementById('modal-row-num').value = '';
+                document.getElementById('modal-form').reset();
+            } else if (mode === 'update') {
+                title.textContent = '✏️ Редактировать сотрудника';
+                const emp = loadedEmployeesData.find(e => e.row_num === rowNum);
+                if (emp) {
+                    document.getElementById('modal-row-num').value = emp.row_num;
+                    document.getElementById('modal-name').value = emp.full_name || '';
+                    document.getElementById('modal-uid').value = emp.static_uid || '';
+                    document.getElementById('modal-position').value = emp.position || '';
+                    document.getElementById('modal-rank').value = emp.rank || '';
+                    document.getElementById('modal-category').value = emp.category || 'Старший состав';
+                }
+            }
+            modal.classList.add('open');
+        }
 
-    // Сохранение (Создание или Обновление)
-    async function handleFormSubmit(e) {
-        e.preventDefault();
-        
-        const rowIndex = document.getElementById('form-row-index').value;
-        const payload = {
-            action: rowIndex ? 'update' : 'create',
-            rowIndex: rowIndex || undefined,
-            fullName: document.getElementById('form-fullName').value.trim(),
-            staticUid: document.getElementById('form-staticUid').value.trim(),
-            position: document.getElementById('form-position').value.trim(),
-            rank: document.getElementById('form-rank').value.trim(),
-            category: document.getElementById('form-category').value
-        };
+        function closeModal() {
+            document.getElementById('employee-modal').classList.remove('open');
+        }
 
-        closeModal();
+        // Сохранение сотрудника в Google Таблицу (Доступно всем)
+        async function handleSaveEmployee(e) {
+            e.preventDefault();
 
-        await fetch(scriptURL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload)
-        });
+            const rowNum = document.getElementById('modal-row-num').value;
+            const payload = {
+                action: rowNum ? 'update' : 'create',
+                row_num: rowNum ? parseInt(rowNum, 10) : undefined,
+                fullName: document.getElementById('modal-name').value.trim(),
+                staticUid: document.getElementById('modal-uid').value.trim(),
+                position: document.getElementById('modal-position').value.trim(),
+                rank: document.getElementById('modal-rank').value.trim(),
+                category: document.getElementById('modal-category').value
+            };
 
-        setTimeout(loadEmployees, 800);
-    }
+            closeModal();
 
-    // Удаление сотрудника
-    async function deleteEmployee(rowIndex) {
-        if (!confirm('Вы уверены, что хотите удалить этого сотрудника?')) return;
+            try {
+                await fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                setTimeout(loadEmployees, 1000);
+            } catch (err) {
+                alert('Ошибка при отправке данных');
+            }
+        }
 
-        await fetch(scriptURL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'delete', rowIndex })
-        });
+        // Удаление сотрудника из Google Таблицы (Доступно всем)
+        async function handleDeleteEmployee(rowNum, name) {
+            if (!confirm(`Удалить сотрудника "${name}"?`)) return;
 
-        setTimeout(loadEmployees, 800);
-    }
-</script>
+            try {
+                await fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'delete', row_num: parseInt(rowNum, 10) })
+                });
+                setTimeout(loadEmployees, 1000);
+            } catch (err) {
+                alert('Ошибка при удалении');
+            }
+        }
+
+        // Остальные функции загрузки из Supabase
+        async function loadReexam() {
+            const tbody = document.getElementById('reexam-tbody');
+            tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-slate-500">Загрузка...</td></tr>';
+            const { data } = await supabaseClient.from('reexamination').select('*');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-slate-500">Нет записей</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(row => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-3.5 text-slate-400 font-mono text-xs">${row.row_num || ''}</td>
+                    <td class="p-3.5 font-semibold text-white">${row.full_name || ''}</td>
+                    <td class="p-3.5 text-slate-400 font-mono text-xs">${row.static_uid || ''}</td>
+                    <td class="p-3.5 text-slate-300">${row.position || ''}</td>
+                    <td class="p-3.5 text-slate-300">${row.exam_date || ''}</td>
+                    <td class="p-3.5 text-slate-300">${row.result || ''}</td>
+                    <td class="p-3.5 text-slate-300">${row.points || ''}</td>
+                    <td class="p-3.5 text-slate-400">${row.note || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadWeekly() {
+            const tbody = document.getElementById('weekly-tbody');
+            tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-slate-500">Загрузка...</td></tr>';
+            const { data } = await supabaseClient.from('weekly_reports').select('*');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-slate-500">Нет записей</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(row => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-3.5 text-slate-400 font-mono text-xs">${row.row_num || ''}</td>
+                    <td class="p-3.5 font-semibold text-white">${row.full_name || ''}</td>
+                    <td class="p-3.5 text-slate-400 font-mono text-xs">${row.static_uid || ''}</td>
+                    <td class="p-3.5 text-slate-300">${row.week_num || ''}</td>
+                    <td class="p-3.5 text-emerald-400 font-bold">${row.points || ''}</td>
+                    <td class="p-3.5 text-slate-300">${row.report_status || ''}</td>
+                    <td class="p-3.5 text-slate-300">${row.online_status || ''}</td>
+                    <td class="p-3.5 font-bold text-white">${row.total || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadLimits() {
+            const tbody = document.getElementById('limits-tbody');
+            tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-500">Загрузка...</td></tr>';
+            const { data } = await supabaseClient.from('staff_limits').select('*');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-500">Нет записей</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(row => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-3.5 font-semibold text-white">${row.rank_position || ''}</td>
+                    <td class="p-3.5 text-slate-300">${row.max_slots || ''}</td>
+                    <td class="p-3.5 text-blue-400 font-bold">${row.current_filled || ''}</td>
+                    <td class="p-3.5 text-emerald-400 font-bold">${row.free_slots || ''}</td>
+                </tr>
+            `).join('');
+        }
+    </script>
 </body>
 </html>
